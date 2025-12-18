@@ -395,7 +395,8 @@ box-shadow:  5px 5px 11px #624e13,
 .lesson-word-describe{
     display: flex;
     justify-content: center;
-    font-size: 16px;
+    font-size: 20px;
+    font-weight: bold;
 }
 .clear-lesson-row{
     display: flex;
@@ -535,7 +536,7 @@ box-shadow:  5px 5px 11px #624e13,
     }
     
     .lesson-word-describe{
-      font-size: 12px;
+      font-size: 18px;
     }
     .cell-words{
         gap: 20px;

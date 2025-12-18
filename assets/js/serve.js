@@ -40,11 +40,11 @@ export function threeFourLW(){
 		shuffle(setconstThreeLW);
 		shuffle(setconstFourLW);
 		
-		currentThreeLW = setconstThreeLW.slice(0, 10);
-		currentFourLW = setconstFourLW.slice(0, 10);
+		currentThreeLW = setconstThreeLW.slice(0, 3);
+		currentFourLW = setconstFourLW.slice(0, 3);
 		
-		setconstThreeLW.splice(0, 10);
-		setconstFourLW.splice(0, 10);
+		setconstThreeLW.splice(0, 3);
+		setconstFourLW.splice(0, 3);
 		
 		currentMergeSet = [...currentThreeLW,  ...currentFourLW];
 		shuffle(currentMergeSet);
@@ -180,5 +180,4 @@ function testrunda(){
 	
 
 	lunch2();
-
 }*/

@@ -9,6 +9,7 @@ var standcon = [
 {"standconWord":"challenge", "standconDescript":"Now Let's take a challenge", "standconAudio":"challenge.mp3"},
 {"standconWord":"correct", "standconDescript":"Correct", "standconAudio":"correct.mp3"},
 {"standconWord":"wrong", "standconDescript":"Wrong", "standconAudio":"wrong.mp3"},
+{"standconWord":"retry", "standconDescript":"Let's try again.", "standconAudio":"retry.mp3"},
 {"standconWord":"incorrect", "standconDescript":"Incorrect", "standconAudio":"incorrect.mp3"},
 {"standconWord":"overall_challenge", "standconDescript":"Time to take a challenge on all we have learnt so far.", "standconAudio":"overall_challenge.mp3"},
 {"standconWord":"next_words", "standconDescript":"Its time for our next words", "standconAudio":"next_words.mp3"}
@@ -34,6 +35,7 @@ let againCountRepeat = "no";
 let audioPlayStopControl = "play";
 let challWrongTone = 0;
 let challCorrectTone = 0;
+let letsTryAgain = 0;
 
 function initialPropFunc(){
 	initialProp++;
@@ -54,22 +56,29 @@ function resetPlayProps(){
 	audioPlayStopControl = "play";
 	challWrongTone = 0;
 	challCorrectTone = 0;
+	letsTryAgain = 0;
 }
 
 
 function startLessong(){
 	let currentMergeSetLenght = currentMergeSet.length;
 	if(statsCounter != currentMergeSetLenght){
+		if(letsTryAgain == 1){
+			letsTryAgain = 0;
+			tryAgainAudio();
+			return;
+		}
 		if(challCorrectTone == 1){
 			challCorrectTone = 0;
 			challCorrectAudio();
 			return;
 		}else if(challWrongTone == 1){
 			challWrongTone = 0;
+			letsTryAgain = 1;
 			challWrongAudio();
 			return;
 		}
-		if (initialProp == 0) initialPropFunc(); //after welcome
+		if (initialProp == 0)  initialPropFunc(); //describe image and text
 		if( repeatdiscribeCount < 2){ //decribe audio
 			repeatdiscribeCount++;
 			console.log("repeatdiscribeCount", repeatdiscribeCount)
@@ -168,6 +177,11 @@ function challCorrectAudio(){
 
 function challWrongAudio(){
 	let njtz = standcon.find(ukcl => ukcl.standconWord == "wrong"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function tryAgainAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "retry"); 
 	let standconAudio = njtz ? njtz.standconAudio : undefine;
 	globalAudioFunc(standconAudio)
 }
