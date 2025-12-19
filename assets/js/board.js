@@ -1,8 +1,9 @@
 import { fourLetterWords, threeLetterWords, alphabet, currentThreeLW, currentFourLW, currentMergeSet, shuffle } from './serve.js';
 
-var activeAudioList = [];
+var activeAudioList = new Set();
 var statsCounter = 0;
 var initialProp = 0;
+var audioFileRecord = [];
 var standcon = [
 {"standconWord":"welcome", "standconDescript":"Welcome. Let's get straight to the fun part.", "standconAudio":"welcome.mp3"},
 {"standconWord":"again", "standconDescript":"Again", "standconAudio":"again.mp3"},
@@ -23,10 +24,145 @@ export function threeFourLWBoard(){
 	
 	lessonWDC.innerHTML = currentMergeSet[0].thwDescribe;
 	
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "welcome"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let mergeChoiceForAudio = [...threeLetterWords, ...fourLetterWords];
+	
+	/*mergeChoiceForAudio.forEach(function(item, index) { 
+		let newAud = {
+		  audioName:            item.thlwName.toLowerCase(),
+        // Use the proper file for the description (you had a typo in the original data)
+        audioDescriptionFile: new Audio(`./ledphoney/${item.thlwAudioDescribe}`),
+        audioLessonFile:      new Audio(`./ledphoney/${item.thlwAudioL}`),
+        audioQuestionFile:    new Audio(`./ledphoney/${item.thlwAudioQ}`)
+		};
+		
+		audioFileRecord.push(newAud);
+	}); 
+	
+	standcon.forEach(function(item, index) { 
+		let newAud = {
+		  audioName:            item.standconWord.toLowerCase(),
+        // Use the proper file for the description (you had a typo in the original data)
+        audioDescriptionFile: new Audio(`./ledphoney/${item.standconAudio}`),
+        audioLessonFile:      {},
+        audioQuestionFile:    {}
+		};
+		audioFileRecord.push(newAud);
+	}); 
+	Object.values(audioFileRecord).forEach(audio => {
+		audio.audioDescriptionFile.preload = 'auto';
+		audio.audioLessonFile.preload = 'auto';
+		audio.audioQuestionFile.preload = 'auto';
+		if (Object.keys(audio.audioDescriptionFile).length === 0) {
+		  console.log('it is empty');
+		  console.log(audio.audioDescriptionFile)
+		} else {
+		  console.log('it is not empty');
+		}
+	});*/
+	preLoadAudios();
+	function preLoadAudios() {
+		const loadPromises = mergeChoiceForAudio.map(item => {
+			const audioSet = {
+				audioName: item.thlwName.toLowerCase(),
+				audioDescriptionFile: new Audio(`./ledphoney/${item.thlwAudioDescribe}`),
+				audioLessonFile: new Audio(`./ledphoney/${item.thlwAudioL}`),
+				audioQuestionFile: new Audio(`./ledphoney/${item.thlwAudioQ}`)
+			};
+			
+			// Set explicit preload behavior
+			Object.values(audioSet).forEach(aud => {
+				if (aud instanceof Audio) {
+					aud.preload = 'auto'; // Explicitly request preloading
+					aud.load(); // Force loading
+				}
+			});
+			
+			// Wait for all three files to be ready
+			const waitForLoad = (audio) => {
+				return new Promise((resolve, reject) => {
+					audio.addEventListener('canplaythrough', () => resolve(audio));
+					audio.addEventListener('error', (e) => reject(e));
+					// Timeout after 10 seconds
+					setTimeout(() => reject(new Error('Timeout')), 10000);
+				});
+			};
+			
+			return Promise.all([
+				waitForLoad(audioSet.audioDescriptionFile),
+				waitForLoad(audioSet.audioLessonFile),
+				waitForLoad(audioSet.audioQuestionFile)
+			]).then(() => {
+				audioFileRecord.push(audioSet);
+			}).catch(err => {
+				console.error(`Failed to load audio for ${item.thlwName}:`, err);
+			});
+		});
+		
+		return Promise.all(loadPromises);
+	}
 
-	globalAudioFunc(standconAudio)
+	// Usage:
+	preLoadAudios().then(() => {
+		console.log('First Batch Audio is ready!');
+		// Now safe to play without reloading
+		preLoadAudiosConst()
+	});
+	
+	function preLoadAudiosConst() {
+		const loadPromises = standcon.map(item => {
+			const audioSet = {
+				audioName: item.standconWord.toLowerCase(),
+				audioDescriptionFile: new Audio(`./ledphoney/${item.standconAudio}`),
+				audioLessonFile: {},
+				audioQuestionFile: {}
+			};
+			
+			// Set explicit preload behavior
+			Object.values(audioSet).forEach(aud => {
+				if (aud instanceof Audio) {
+					aud.preload = 'auto'; // Explicitly request preloading
+					aud.load(); // Force loading
+				}
+			});
+			
+			// Wait for all three files to be ready
+			const waitForLoad = (audio) => {
+				return new Promise((resolve, reject) => {
+					audio.addEventListener('canplaythrough', () => resolve(audio));
+					audio.addEventListener('error', (e) => reject(e));
+					// Timeout after 10 seconds
+					setTimeout(() => reject(new Error('Timeout')), 10000);
+				});
+			};
+			
+			return Promise.all([
+				waitForLoad(audioSet.audioDescriptionFile),
+				//waitForLoad(audioSet.audioLessonFile),
+				//waitForLoad(audioSet.audioQuestionFile)
+			]).then(() => {
+				audioFileRecord.push(audioSet);
+			}).catch(err => {
+				console.error(`Failed to load audio for ${item.thlwName}:`, err);
+			});
+		});
+		
+		return Promise.all(loadPromises);
+	}
+	
+	preLoadAudiosConst().then(() => {
+		console.log('All audio ready!');
+		// Now safe to play without reloading
+		let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "welcome"); 
+		let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
+		globalAudioFunc(standconAudio)
+	});
+
+	//console.log(audioFileRecord)
+	
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "welcome"); 
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	
+	
 }
 let repeatdiscribeCount = 0;
 let repeattutCount = 0;
@@ -96,6 +232,7 @@ function startLessong(){
 					repeattutCount++;
 					againCountRepeat = "yes"
 					
+					console.log("againCountRepeat", againCountRepeat)
 					console.log("repeatdiscribeCount", repeatdiscribeCount)
 					console.log("repeattutCount", repeattutCount)
 					console.log("statsCounter", statsCounter)
@@ -142,47 +279,70 @@ function startLessong(){
 }
 
 function discribeAudio(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioDescribe;
+	//let standconAudio = currentMergeSet[statsCounter].thlwAudioDescribe;
+	let thlwName = currentMergeSet[statsCounter].thlwName.toLowerCase();
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == thlwName); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
+	console.log("describe", thlwName)
 	globalAudioFunc(standconAudio)
 }
 
 function tutSpellAudo(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioL;
+	//let standconAudio = currentMergeSet[statsCounter].thlwAudioL;
+	let thlwName = currentMergeSet[statsCounter].thlwName.toLowerCase();
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == thlwName); 
+	let standconAudio = njtz ? njtz.audioLessonFile : undefine;
+	console.log("lesson", thlwName)
 	globalAudioFunc(standconAudio)
 }
 
 function againAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "again");
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "again");
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "again"); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
+	console.log("again")
 	globalAudioFunc(standconAudio)
 }
 
 function chanllegeAudo(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "challenge"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "challenge"); 
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "challenge"); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
+	console.log("challenge")
 	globalAudioFunc(standconAudio)
 }
 
 function tutQuesiontAudo(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioQ;
+	//let standconAudio = currentMergeSet[statsCounter].thlwAudioQ;
+	let thlwName = currentMergeSet[statsCounter].thlwName.toLowerCase();
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == thlwName); 
+	let standconAudio = njtz ? njtz.audioQuestionFile : undefine;
+	console.log("question", thlwName)
 	globalAudioFunc(standconAudio)
 }
 
 function challCorrectAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "correct"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "correct"); 
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "correct"); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
 	globalAudioFunc(standconAudio)
 }
 
 function challWrongAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "wrong"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "wrong"); 
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "wrong"); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
 	globalAudioFunc(standconAudio)
 }
 function tryAgainAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "retry"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	//let njtz = standcon.find(ukcl => ukcl.standconWord == "retry"); 
+	//let standconAudio = njtz ? njtz.standconAudio : undefine;
+	let njtz = audioFileRecord.find(ukcl => ukcl.audioName == "retry"); 
+	let standconAudio = njtz ? njtz.audioDescriptionFile : undefine;
 	globalAudioFunc(standconAudio)
 }
 
@@ -317,34 +477,63 @@ function gotochallengeP(){
 }
 
 
-function globalAudioFunc(audioSound){
-	let audio = new Audio("./ledphoney/"+audioSound);
-	activeAudioList.push(audio);
+function globalAudioFunc(audio){
+	//console.log(audio)
+	//let audio = new Audio("./ledphoney/"+audioSound);
+	//let audio = audioSound;
+	/*activeAudioList.push(audio);
 	audio.addEventListener('ended', () => {
 		const index = activeAudioList.indexOf(audio);
         if (index !== -1) activeAudioList.splice(index, 1);
+		
 		startLessong();
 	});
 	audio.addEventListener('error', (e) => {
 		const index = activeAudioList.indexOf(audio);
-        if (index !== -1) activeAudioList.splice(index, 1);
+       if (index !== -1) activeAudioList.splice(index, 1);
 		console.error('Audio error:', e);
-		startLessong();
+		//startLessong();
 	});
 	audio.play()
 	.catch(err => {
 	  // play() returns a promise – catch rejections (e.g., autoplay blocked)
 	  console.error('Play failed:', err);
-	  const index = activeAudioList.indexOf(audio);
+		const index = activeAudioList.indexOf(audio);
 	  if (index !== -1) activeAudioList.splice(index, 1);
+	  startLessong();
+	});*/
+	
+	//activeAudioList.add(audio);
+	audio.play()
+    .catch(err => console.error('Play failed:', err));
+	
+	audio.onended = () =>{
+		//activeAudioList.delete(audio);
 		startLessong();
-	});
+	}
+
+  /*audio.addEventListener('ended', () => {
+    // When it finishes we can forget about it
+    activeAudioList.delete(audio);
+    startLessong();               // your existing callback
+  });*/
+
+  /*audio.addEventListener('error', (e) => {
+    console.error('Audio error:', e);
+    activeAudioList.delete(audio); // clean up on error as well
+  });*/
+
+
+  // Optional: if you ever pause manually, also clean up
+  //audio.addEventListener('pause', () => activeAudioList.delete(audio));
+
+  //return audio;   // in case the caller wants the object
 }
 
 
 function stopAllAudio() {
     // Stop DOM audio/video elements
-    const mediaElements = document.querySelectorAll('audio, video');
+    /*const mediaElements = document.querySelectorAll('audio, video');
     mediaElements.forEach(element => {
         if (!element.paused) {
             element.pause();
@@ -352,7 +541,7 @@ function stopAllAudio() {
         }
     });
 
-    // Stop all tracked Audio objects
+     //Stop all tracked Audio objects
     activeAudioList.forEach(audio => {
         if (!audio.paused) {
             audio.pause();
@@ -361,7 +550,13 @@ function stopAllAudio() {
     });
 
     // Clear the tracking list
-    activeAudioList = [];
+    activeAudioList = [];*/
+	
+	document.querySelectorAll('audio, video').forEach(el => {
+    el.pause();
+    el.currentTime = 0;
+  });
+
 }
 
 function resizingLessonLetters(){
@@ -430,5 +625,4 @@ function randomAnimLetters(){
 function stringToArray(str) {
     return str.split('');
 }
-
 
