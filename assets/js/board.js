@@ -329,6 +329,7 @@ function globalAudioFunc(audioSound){
 		const index = activeAudioList.indexOf(audio);
         if (index !== -1) activeAudioList.splice(index, 1);
 		console.error('Audio error:', e);
+		startLessong();
 	});
 	audio.play()
 	.catch(err => {
@@ -336,6 +337,7 @@ function globalAudioFunc(audioSound){
 	  console.error('Play failed:', err);
 	  const index = activeAudioList.indexOf(audio);
 	  if (index !== -1) activeAudioList.splice(index, 1);
+		startLessong();
 	});
 }
 
@@ -428,4 +430,5 @@ function randomAnimLetters(){
 function stringToArray(str) {
     return str.split('');
 }
+
 
