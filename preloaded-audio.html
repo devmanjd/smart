@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Preload Demo</title>
+    <style>
+        #pageLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loader-text {
+            font-family: Arial, sans-serif;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .progress-bar {
+            width: 200px;
+            height: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        body.loaded #pageLoader {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #content {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Loader -->
+    <div id="pageLoader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Loading audio files...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="loader-text" id="progressText">0%</div>
+    </div>
+    
+    <!-- Main Content -->
+    <div id="content" style="display: none;">
+        <h1>Audio Application</h1>
+        <button onclick="playWelcome()">Play Welcome</button>
+        <button onclick="playDescribe()">Play Describe</button>
+        <button onclick="stopAllAudio()">Stop All Audio</button>
+    </div>
+    
+    <script>
+        // Your existing data
+        var tfletterwords = [
+    {
+        "thlwName": "PEN",
+        "thwDescribe": "A pen is something you use to write or draw.",
+        "thlwAudioDescribe": "pen_describe.mp3",
+        "thlwAudioL": "pen_l.mp3",
+        "thlwAudioQ": "pen_q.mp3",
+        "thlwImage": "pen.png"
+    },
+    {
+        "thlwName": "FISH",
+        "thwDescribe": "A fish lives in water and swims.",
+        "thlwAudioDescribe": "fish_describe.mp3",
+        "thlwAudioL": "fish_l.mp3",
+        "thlwAudioQ": "fish_q.mp3",
+        "thlwImage": "fish.png"
+    },
+    {
+        "thlwName": "COIN",
+        "thwDescribe": "A coin is a small round piece of metal for buying things.",
+        "thlwAudioDescribe": "coin_describe.mp3",
+        "thlwAudioL": "coin_l.mp3",
+        "thlwAudioQ": "coin_q.mp3",
+        "thlwImage": "coin.png"
+    },
+    {
+        "thlwName": "STAR",
+        "thwDescribe": "Stars are tiny lights far away in the sky.",
+        "thlwAudioDescribe": "star_describe.mp3",
+        "thlwAudioL": "star_l.mp3",
+        "thlwAudioQ": "star_q.mp3",
+        "thlwImage": "star.png"
+    },
+    {
+        "thlwName": "OIL",
+        "thwDescribe": "An oil is a slippery liquid used for cooking or making machines work smoothly.",
+        "thlwAudioDescribe": "oil_describe.mp3",
+        "thlwAudioL": "oil_l.mp3",
+        "thlwAudioQ": "oil_q.mp3",
+        "thlwImage": "oil.png"
+    },
+    {
+        "thlwName": "CAR",
+        "thwDescribe": "A car is a vehicle that families use to travel from one place to another.",
+        "thlwAudioDescribe": "car_describe.mp3",
+        "thlwAudioL": "car_l.mp3",
+        "thlwAudioQ": "car_q.mp3",
+        "thlwImage": "car.png"
+    }
+]
+
+var standcon = [
+{"standconWord":"welcome", "standconDescript":"Welcome. Let's get straight to the fun part.", "standconAudio":"welcome.mp3"},
+{"standconWord":"again", "standconDescript":"Again", "standconAudio":"again.mp3"},
+{"standconWord":"challenge", "standconDescript":"Now Let's take a challenge", "standconAudio":"challenge.mp3"},
+{"standconWord":"correct", "standconDescript":"Correct", "standconAudio":"correct.mp3"},
+{"standconWord":"wrong", "standconDescript":"Wrong", "standconAudio":"wrong.mp3"},
+{"standconWord":"retry", "standconDescript":"Let's try again.", "standconAudio":"retry.mp3"},
+{"standconWord":"incorrect", "standconDescript":"Incorrect", "standconAudio":"incorrect.mp3"},
+{"standconWord":"overall_challenge", "standconDescript":"Time to take a challenge on all we have learnt so far.", "standconAudio":"overall_challenge.mp3"},
+{"standconWord":"next_words", "standconDescript":"Its time for our next words", "standconAudio":"next_words.mp3"},
+{"standconWord":"end_lesson", "standconDescript":"We have come to the end of this lesson. Please leave us a feed back. Thank You.", "standconAudio":"end_lesson.mp3"}
+];
+        
+        // We'll add the preloading code here
+// Audio preloading system
+const audioCache = new Map(); // Cache for preloaded audio
+const preloadedAudios = new Set(); // Track preloaded audio objects
+var statsCounter = 0;
+var activeAudioList = [];
+
+// Function to collect all audio files from both arrays
+function getAllAudioFiles() {
+    const audioFiles = new Set();
+    
+    // Collect from tfletterwords
+    tfletterwords.forEach(word => {
+        if (word.thlwAudioDescribe) audioFiles.add(word.thlwAudioDescribe);
+        if (word.thlwAudioL) audioFiles.add(word.thlwAudioL);
+        if (word.thlwAudioQ) audioFiles.add(word.thlwAudioQ);
+    });
+    
+    // Collect from standcon
+    standcon.forEach(phrase => {
+        if (phrase.standconAudio) audioFiles.add(phrase.standconAudio);
+    });
+    
+    return Array.from(audioFiles);
+}
+
+// Function to preload all audio files
+async function preloadAllAudios() {
+    const audioFiles = getAllAudioFiles();
+    const totalFiles = audioFiles.length;
+    let loadedCount = 0;
+    
+    // Update progress display
+    function updateProgress() {
+        loadedCount++;
+        const percentage = Math.round((loadedCount / totalFiles) * 100);
+        document.getElementById('progressFill').style.width = `${percentage}%`;
+        document.getElementById('progressText').textContent = `${percentage}%`;
+    }
+    
+    // Create promises for each audio file
+    const preloadPromises = audioFiles.map(filename => {
+        return new Promise((resolve, reject) => {
+            const audio = new Audio();
+            
+            // Set up event listeners
+            audio.addEventListener('canplaythrough', () => {
+                // Store in cache
+                audioCache.set(filename, audio);
+                preloadedAudios.add(audio);
+                updateProgress();
+                resolve({ filename, success: true });
+            }, { once: true });
+            
+            audio.addEventListener('error', (e) => {
+                console.error(`Failed to load audio: ${filename}`, e);
+                // Even if it fails, we'll resolve to continue
+                updateProgress();
+                resolve({ filename, success: false, error: e });
+            }, { once: true });
+            
+            // Set source and start loading
+            audio.src = `./ledphoney/${filename}`;
+            audio.preload = 'auto';
+            audio.load();
+            
+            // Fallback: resolve after timeout even if events don't fire
+            setTimeout(() => {
+                if (!audioCache.has(filename)) {
+                    console.warn(`Timeout loading audio: ${filename}`);
+                    updateProgress();
+                    resolve({ filename, success: false, error: 'timeout' });
+                }
+            }, 10000); // 10 second timeout
+        });
+    });
+    
+    // Wait for all preloads to complete
+    try {
+        const results = await Promise.all(preloadPromises);
+        
+        // Log results
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+        
+        console.log(`Audio preloading complete: ${successful} loaded, ${failed} failed`);
+        
+        // Show content and hide loader
+        document.getElementById('content').style.display = 'block';
+        document.body.classList.add('loaded');
+        
+        // Remove loader from DOM after animation
+        setTimeout(() => {
+            const loader = document.getElementById('pageLoader');
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error during audio preloading:', error);
+        // Still show content even if some audios failed
+        document.getElementById('content').style.display = 'block';
+        document.body.classList.add('loaded');
+    }
+}
+
+// Modified globalAudioFunc to use preloaded audio
+function globalAudioFunc(audioSound) {
+    // Check if audio is in cache
+    if (audioCache.has(audioSound)) {
+        const cachedAudio = audioCache.get(audioSound);
+        
+        // Clone the audio to allow multiple simultaneous plays
+        const audio = cachedAudio.cloneNode();
+        audio.currentTime = 0;
+        
+        activeAudioList.push(audio);
+        
+        audio.addEventListener('ended', () => {
+            const index = activeAudioList.indexOf(audio);
+            if (index !== -1) activeAudioList.splice(index, 1);
+            startLessong();
+        });
+        
+        audio.addEventListener('error', (e) => {
+            const index = activeAudioList.indexOf(audio);
+            if (index !== -1) activeAudioList.splice(index, 1);
+            console.error('Audio playback error:', e);
+            startLessong();
+        });
+        
+        audio.play().catch(err => {
+            console.error('Play failed:', err);
+            const index = activeAudioList.indexOf(audio);
+            if (index !== -1) activeAudioList.splice(index, 1);
+            startLessong();
+        });
+        
+        return audio;
+    }
+    
+    // Fallback: create new audio if not in cache
+    console.warn(`Audio "${audioSound}" not in cache, loading on demand`);
+    let audio = new Audio(`./ledphoney/${audioSound}`);
+    activeAudioList.push(audio);
+    
+    audio.addEventListener('ended', () => {
+        const index = activeAudioList.indexOf(audio);
+        if (index !== -1) activeAudioList.splice(index, 1);
+        startLessong();
+    });
+    
+    audio.addEventListener('error', (e) => {
+        const index = activeAudioList.indexOf(audio);
+        if (index !== -1) activeAudioList.splice(index, 1);
+        console.error('Audio error:', e);
+        startLessong();
+    });
+    
+    audio.play().catch(err => {
+        console.error('Play failed:', err);
+        const index = activeAudioList.indexOf(audio);
+        if (index !== -1) activeAudioList.splice(index, 1);
+        startLessong();
+    });
+    
+    return audio;
+}
+
+// Your existing functions (modified to use the new system)
+function welcomeAudio() {
+    let njtz = standcon.find(ukcl => ukcl.standconWord == "welcome");
+    let standconAudio = njtz ? njtz.standconAudio : undefined;
+    globalAudioFunc(standconAudio);
+}
+
+function discribeAudio() {
+    let standconAudio = tfletterwords[statsCounter].thlwAudioDescribe;
+    globalAudioFunc(standconAudio);
+}
+
+function startLessong() {
+    // Your existing lesson start logic
+    console.log('Starting lesson...');
+}
+
+// Your existing stopAllAudio function remains the same
+function stopAllAudio() {
+    // Stop DOM audio/video elements
+    const mediaElements = document.querySelectorAll('audio, video');
+    mediaElements.forEach(element => {
+        if (!element.paused) {
+            element.pause();
+            element.currentTime = 0;
+        }
+    });
+
+    // Stop all tracked Audio objects
+    activeAudioList.forEach(audio => {
+        if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+    });
+
+    // Clear the tracking list
+    activeAudioList = [];
+}
+
+// UI functions for the demo
+function playWelcome() {
+    welcomeAudio();
+}
+
+function playDescribe() {
+    discribeAudio();
+}
+
+// Start preloading when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Start preloading
+    preloadAllAudios();
+});
+    </script>
+</body>
+</html>
