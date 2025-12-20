@@ -1,33 +1,12 @@
-import { fourLetterWords, threeLetterWords, alphabet, currentThreeLW, currentFourLW, currentMergeSet, shuffle } from './serve.js';
+import { fourLetterWords, threeLetterWords, alphabet, currentThreeLW, currentFourLW, currentMergeSet, challengeOnlyArr, shuffle, deseydicing, currentBatchIndex, increaseCurrentBatchIndex, constantArrayNumber, pgnConst } from './serve.js';
+
 
 var activeAudioList = [];
 var statsCounter = 0;
-var initialProp = 0;
-var standcon = [
-{"standconWord":"welcome", "standconDescript":"Welcome. Let's get straight to the fun part.", "standconAudio":"welcome.mp3"},
-{"standconWord":"again", "standconDescript":"Again", "standconAudio":"again.mp3"},
-{"standconWord":"challenge", "standconDescript":"Now Let's take a challenge", "standconAudio":"challenge.mp3"},
-{"standconWord":"correct", "standconDescript":"Correct", "standconAudio":"correct.mp3"},
-{"standconWord":"wrong", "standconDescript":"Wrong", "standconAudio":"wrong.mp3"},
-{"standconWord":"retry", "standconDescript":"Let's try again.", "standconAudio":"retry.mp3"},
-{"standconWord":"incorrect", "standconDescript":"Incorrect", "standconAudio":"incorrect.mp3"},
-{"standconWord":"overall_challenge", "standconDescript":"Time to take a challenge on all we have learnt so far.", "standconAudio":"overall_challenge.mp3"},
-{"standconWord":"next_words", "standconDescript":"Its time for our next words", "standconAudio":"next_words.mp3"}
-];
-export function threeFourLWBoard(){
-	let lessonPic = document.getElementById("lessonPic");
-	let lessonW = document.getElementById("lessonW");
-	let lessonWDC = document.getElementById("lessonWDC");
+var descriptionProp = 0;
+var moveToNextWordSets = false;
+var endOfLessonSet = false;
 
-	lessonPic.innerHTML = `<img width="300px" height="200px" src="./pixagime/${currentMergeSet[0].thlwImage}"  draggable="false">`;
-	
-	lessonWDC.innerHTML = currentMergeSet[0].thwDescribe;
-	
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "welcome"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-
-	globalAudioFunc(standconAudio)
-}
 let repeatdiscribeCount = 0;
 let repeattutCount = 0;
 let challengeCount = 0;
@@ -37,19 +16,11 @@ let challWrongTone = 0;
 let challCorrectTone = 0;
 let letsTryAgain = 0;
 
-function initialPropFunc(){
-	initialProp++;
-	let lessonPic = document.getElementById("lessonPic");
-	let lessonW = document.getElementById("lessonW");
-	let lessonWDC = document.getElementById("lessonWDC");
 
-	lessonPic.innerHTML = `<img width="300px" height="200px" src="./pixagime/${currentMergeSet[statsCounter].thlwImage}"  draggable="false">`;
-	lessonWDC.innerHTML = currentMergeSet[statsCounter].thwDescribe;
-}
 
 function resetPlayProps(){
 	repeatdiscribeCount = 0;
-	initialProp = 0;
+	descriptionProp = 0;
 	repeattutCount = 0;
 	challengeCount = 0;
 	againCountRepeat = "no";
@@ -59,8 +30,62 @@ function resetPlayProps(){
 	letsTryAgain = 0;
 }
 
+//Overall Challenges
 
-function startLessong(){
+var challengeOnlyCounter = 0;
+
+let overallChallengeProp = 0;
+
+function resetOverallChallenge(){
+	audioPlayStopControl = "play";
+	challengeCount = 0;
+	challWrongTone = 0;
+	challCorrectTone = 0;
+	letsTryAgain = 0;
+	
+}
+
+function resetForNewWordSets(){
+	statsCounter = 0;
+	challengeOnlyCounter = 0;
+	overallChallengeProp = 0;
+}
+
+
+var standcon = [
+{"standconWord":"welcome", "standconDescript":"Welcome. Let's get straight to the fun part.", "standconAudio":"welcome.mp3"},
+{"standconWord":"again", "standconDescript":"Again", "standconAudio":"again.mp3"},
+{"standconWord":"challenge", "standconDescript":"Now Let's take a challenge", "standconAudio":"challenge.mp3"},
+{"standconWord":"correct", "standconDescript":"Correct", "standconAudio":"correct.mp3"},
+{"standconWord":"wrong", "standconDescript":"Wrong", "standconAudio":"wrong.mp3"},
+{"standconWord":"retry", "standconDescript":"Let's try again.", "standconAudio":"retry.mp3"},
+{"standconWord":"incorrect", "standconDescript":"Incorrect", "standconAudio":"incorrect.mp3"},
+{"standconWord":"overall_challenge", "standconDescript":"Time to take a challenge on all we have learnt so far.", "standconAudio":"overall_challenge.mp3"},
+{"standconWord":"next_words", "standconDescript":"Its time for our next words", "standconAudio":"next_words.mp3"},
+{"standconWord":"end_lesson", "standconDescript":"We have come to the end of this lesson. Please leave us a feed back. Thank You.", "standconAudio":"end_lesson.mp3"}
+];
+export function endLessonClose(){
+	endLessonAudio();
+}
+export function threeFourLWBoard(){
+	let lessonPic = document.getElementById("lessonPic");
+	let lessonW = document.getElementById("lessonW");
+	let lessonWDC = document.getElementById("lessonWDC");
+
+	lessonPic.innerHTML = `<img width="300px" height="200px" src="./pixagime/${currentMergeSet[0].thlwImage}"  draggable="false">`;
+	lessonWDC.innerHTML = currentMergeSet[0].thwDescribe;
+	
+	
+	//statsCounter = currentMergeSet.length;
+	welcomeAudio()
+}
+
+export function startLessong(){
+	if(endOfLessonSet == true){
+		endOfLessonSet = false;
+		window.location.href = './';
+		return;
+	}
 	let currentMergeSetLenght = currentMergeSet.length;
 	if(statsCounter != currentMergeSetLenght){
 		if(letsTryAgain == 1){
@@ -78,7 +103,7 @@ function startLessong(){
 			challWrongAudio();
 			return;
 		}
-		if (initialProp == 0)  initialPropFunc(); //describe image and text
+		if (descriptionProp == 0)  gotodescriptionP(); //describe image and text
 		if( repeatdiscribeCount < 2){ //decribe audio
 			repeatdiscribeCount++;
 			console.log("repeatdiscribeCount", repeatdiscribeCount)
@@ -130,60 +155,70 @@ function startLessong(){
 						tutQuesiontAudo()
 					}, 200);
 				}
-				
 			}
 		}
 	}else{
-		//CREATE A FUNCTION THAT CHECKS WHAT'S UP
-		//TAKE A FULL CHALLENGE OF THE SUB SET //BUT THIS IS TIGGERED BY THE WHAT'S UP FUNCTION
-		//HERE IS ONLY FOR LESSON AUDIO
-		//CHALLENGE ONLY AUDIO SHOULD BE DIFFERENT, BUT CAN BE CALLED HERE FROM WHATS'UP FUNCTION
+		if(letsTryAgain == 1){
+			letsTryAgain = 0;
+			tryAgainAudio();
+			return;
+		}
+		if(challCorrectTone == 1){
+			challCorrectTone = 0;
+			challCorrectAudio();
+			return;
+		}else if(challWrongTone == 1){
+			challWrongTone = 0;
+			letsTryAgain = 1;
+			challWrongAudio();
+			return;
+		}
+		if (overallChallengeProp == 0){    //over challenge audio
+			overallChallengeAudio();
+			return;
+		}
+		let challengeOnlyArrLenght = challengeOnlyArr.length;
+		//console.log("challengeOnlyArr", challengeOnlyArr)
+		//console.log("challengeOnlyArrLenght", challengeOnlyArrLenght)
+		if(challengeOnlyCounter != challengeOnlyArrLenght){
+			if(challengeCount == 0 && audioPlayStopControl == "play"){ //lets take a challenge
+				challengeCount = 1;
+				audioPlayStopControl = "stop";
+				gotochallengeOnlyP();
+				setTimeout(() => {
+					document.getElementById("lessonW").innerHTML = '';
+					challengeQuesiontAudo()
+				}, 100);
+			}
+		}else{
+			if(moveToNextWordSets === true){
+				moveToNextWordSets = false;
+				resetPlayProps();
+				resetForNewWordSets();
+				increaseCurrentBatchIndex();
+				return;
+			}
+			let batchstop = constantArrayNumber/pgnConst-1;
+			batchstop = batchstop.toFixed(0)
+			if(currentBatchIndex >= batchstop){
+				moveToNextWordSets = true;
+				startLessong();
+			}else{
+				nextWordsAudio();
+			}
+		}
 	}
 }
 
-function discribeAudio(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioDescribe;
-	globalAudioFunc(standconAudio)
-}
+/****************** LESSON DESCRIPTION, SPELLNNG AND CHALLENGE *****************/
+function gotodescriptionP(){
+	descriptionProp++;
+	let lessonPic = document.getElementById("lessonPic");
+	let lessonW = document.getElementById("lessonW");
+	let lessonWDC = document.getElementById("lessonWDC");
 
-function tutSpellAudo(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioL;
-	globalAudioFunc(standconAudio)
-}
-
-function againAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "again");
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	globalAudioFunc(standconAudio)
-}
-
-function chanllegeAudo(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "challenge"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	
-	globalAudioFunc(standconAudio)
-}
-
-function tutQuesiontAudo(){
-	let standconAudio = currentMergeSet[statsCounter].thlwAudioQ;
-	globalAudioFunc(standconAudio)
-}
-
-function challCorrectAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "correct"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	globalAudioFunc(standconAudio)
-}
-
-function challWrongAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "wrong"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	globalAudioFunc(standconAudio)
-}
-function tryAgainAudio(){
-	let njtz = standcon.find(ukcl => ukcl.standconWord == "retry"); 
-	let standconAudio = njtz ? njtz.standconAudio : undefine;
-	globalAudioFunc(standconAudio)
+	lessonPic.innerHTML = `<img width="300px" height="200px" src="./pixagime/${currentMergeSet[statsCounter].thlwImage}"  draggable="false">`;
+	lessonWDC.innerHTML = currentMergeSet[statsCounter].thwDescribe;
 }
 
 function gotospellingP(){
@@ -287,14 +322,14 @@ function gotochallengeP(){
 		if(alphset == remAlphalsVa){
 			
 			stopAllAudio();
-			console.log("correct")
+			//console.log("correct")
 			realClearingToConLesson()
 			statsCounter++;
 			challCorrectTone = 1;
 			startLessong()
 		}else{
 			stopAllAudio()
-			console.log("wrong")
+			//console.log("wrong")
 			realClearingToConLesson()
 			repeatdiscribeCount = 2;
 			challWrongTone = 1;
@@ -316,7 +351,203 @@ function gotochallengeP(){
 	
 }
 
+function gotochallengeOnlyP(){
+	let lessonPic = document.getElementById("lessonPic");
+	let clearLessonW = document.getElementById("clearLessonW");
+	let lessonW = document.getElementById("lessonW");
+	let lessonWDC = document.getElementById("lessonWDC");
+	let cellWordPick = document.getElementById("cellWordPick");
+	
 
+	lessonPic.innerHTML = `<img width="100x" height="67px" src="./pixagime/${challengeOnlyArr[challengeOnlyCounter].thlwImage}"  draggable="false">`;
+	lessonW.innerHTML = '';
+	lessonWDC.innerHTML = '';
+	
+	let setNewalphabet = [...alphabet];
+	//console.log("setNewalphabet", setNewalphabet)
+	shuffle(setNewalphabet)
+	
+	let slicedSetNewalphabet = '';
+
+	
+	let alphset = challengeOnlyArr[challengeOnlyCounter].thlwName;
+	let alphsetLength = alphset.length;
+	let alphsetArray = stringToArray(alphset)
+	
+	if(alphsetLength == 3){
+		slicedSetNewalphabet = setNewalphabet.splice(0, 3);
+	}else if(alphsetLength == 4){
+		slicedSetNewalphabet = setNewalphabet.splice(0, 2);
+	}
+	shuffle(slicedSetNewalphabet)
+	let combineAlphals = [...slicedSetNewalphabet, ...alphsetArray];
+	shuffle(combineAlphals)
+	
+
+	let remAlphalsArr = []
+	let remAlphalsVa = '';
+
+	rearrangeCSW();
+	
+	function rearrangeCSW(){
+		
+		combineAlphals.forEach(function(item, index) {
+			let cellwordDiv = document.createElement("div");
+			
+			let cellwordP = document.createElement("p");
+			cellwordP.innerHTML = item;
+			
+			cellwordDiv.addEventListener("click", function() {
+				remAlphalsArr.push(cellwordP.innerText)
+				lessonW.innerHTML += cellwordP.innerText;
+				remAlphalsVa += cellwordP.innerText;
+				resizingLessonLetters()
+				cellwordDiv.remove();
+				addingClearButton()
+				stopAllAudio()
+				
+				let remAlphalsVaLenght = remAlphalsVa.length;
+				if(alphsetLength == remAlphalsVaLenght){
+					checkSpellResult()
+				}
+			});
+			
+			cellwordDiv.appendChild(cellwordP);
+			cellWordPick.appendChild(cellwordDiv);
+		});
+		randomAnimLetters();
+	}
+	function addingClearButton(){
+		clearLessonW.classList.add('clear-lesson-row')
+		clearLessonW.innerHTML = `<div class="clear-lesson-col">X</div>`;
+		clearLessonW.addEventListener("click", function() {
+			clearingSpelledWords()
+		});
+	}
+	function clearingSpelledWords(){
+		remAlphalsArr = [];
+		lessonW.innerHTML = '';
+		remAlphalsVa = '';
+		cellWordPick.innerHTML = '';
+		
+		clearLessonW.classList.remove('clear-lesson-row');
+		clearLessonW.innerHTML = '';
+		rearrangeCSW();
+	}
+	function checkSpellResult(){
+		cellWordPick.innerHTML = '';
+		clearLessonW.classList.remove('clear-lesson-row');
+		clearLessonW.innerHTML = '';
+		if(alphset == remAlphalsVa){
+			
+			stopAllAudio();
+			//console.log("correct")
+			realClearingToConLesson()
+			challengeOnlyCounter++;
+			challCorrectTone = 1;
+			startLessong()
+		}else{
+			stopAllAudio()
+			//console.log("wrong")
+			realClearingToConLesson()
+			challWrongTone = 1;
+			startLessong()
+		}
+		
+	}
+	
+	function realClearingToConLesson(){
+		remAlphalsArr = [];
+		//lessonW.innerHTML = '';
+		remAlphalsVa = '';
+		cellWordPick.innerHTML = '';
+		clearLessonW.classList.remove('clear-lesson-row');
+		clearLessonW.innerHTML = '';
+		
+		resetOverallChallenge()
+	}
+	
+}
+
+/*****************************ALL AUDIOS *************************/
+function welcomeAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "welcome"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function discribeAudio(){
+	let standconAudio = currentMergeSet[statsCounter].thlwAudioDescribe;
+	globalAudioFunc(standconAudio)
+}
+
+function tutSpellAudo(){
+	let standconAudio = currentMergeSet[statsCounter].thlwAudioL;
+	globalAudioFunc(standconAudio)
+}
+
+function againAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "again");
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+
+function chanllegeAudo(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "challenge"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+
+function tutQuesiontAudo(){
+	let standconAudio = currentMergeSet[statsCounter].thlwAudioQ;
+	globalAudioFunc(standconAudio)
+}
+
+function challCorrectAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "correct"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+
+function challWrongAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "wrong"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function tryAgainAudio(){
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "retry"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function overallChallengeAudio(){
+	overallChallengeProp++;
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "overall_challenge"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function nextWordsAudio(){
+	moveToNextWordSets = true;
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "next_words"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+function endLessonAudio(){
+	endOfLessonSet = true;
+	let njtz = standcon.find(ukcl => ukcl.standconWord == "end_lesson"); 
+	let standconAudio = njtz ? njtz.standconAudio : undefine;
+	globalAudioFunc(standconAudio)
+}
+
+
+
+function challengeQuesiontAudo(){
+	let standconAudio = challengeOnlyArr[challengeOnlyCounter].thlwAudioQ;
+	globalAudioFunc(standconAudio)
+}
+
+
+
+
+/*****************************HELPER FUNCTIONS *************************/
 function globalAudioFunc(audioSound){
 	let audio = new Audio("./ledphoney/"+audioSound);
 	activeAudioList.push(audio);
@@ -418,7 +649,6 @@ function resizingLessonLetters(){
 
 function randomAnimLetters(){
 	// Set random animation delays for each p element
-	
     const pElements = document.querySelectorAll('.cell-words p');
     pElements.forEach(element => {
         // Generate a random delay between 0 and 2 seconds

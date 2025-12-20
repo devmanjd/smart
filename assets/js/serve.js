@@ -1,5 +1,5 @@
 import { showTutChalPage } from './main.js';
-import { threeFourLWBoard } from './board.js';
+import { threeFourLWBoard, startLessong, endLessonClose } from './board.js';
 
 //const json no changes made
 export var threeLetterWords = '';
@@ -15,7 +15,12 @@ export var setconstFourLW = '';
 export var currentThreeLW = '';
 export var currentFourLW = '';
 export var currentMergeSet = '';
+export var challengeOnlyArr = '';
 
+export var currentBatchIndex = 0;
+export var pgnConst = 3;
+
+export var constantArrayNumber = 15; //We are using this for now (dynamic in future)
 
 export function threeFourLW(){
 	$('#pageCamp').load('tut-chal.html', function() {
@@ -33,38 +38,61 @@ export function threeFourLW(){
 		relayJSONfile('./reqxon/four-letter-words.json', function(data){
 			fourLetterWords = data;
 			setconstFourLW = [...fourLetterWords];
+			alphetArrConstruct();
 			slicingandsetting()
         });
 	}
-	function slicingandsetting(){
-		shuffle(setconstThreeLW);
-		shuffle(setconstFourLW);
-		
-		currentThreeLW = setconstThreeLW.slice(0, 15);
-		currentFourLW = setconstFourLW.slice(0, 15);
-		
-		setconstThreeLW.splice(0, 15);
-		setconstFourLW.splice(0, 15);
-		
-		currentMergeSet = [...currentThreeLW,  ...currentFourLW];
-		shuffle(currentMergeSet);
-		console.log(currentMergeSet)
-		
-		//console.log("cont 3", threeLetterWords)
-		//console.log("set 3", setconstThreeLW)
-		
-		
-		threeFourLWBoard();
-		
-		//USE IN CHALLENGE FUNCTION
-		alphabet = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i));
-		//console.log(alphabet);
-		//console.log(shuffle(alphabet))
-		//console.log(alphabet.splice(0, 3))
-		
-	}
-
 }
+
+function slicingandsetting(){
+	shuffle(setconstThreeLW);
+	shuffle(setconstFourLW);
+	
+	//currentThreeLW = setconstThreeLW.slice(0, 1);
+	//currentFourLW = setconstFourLW.slice(0, 1);
+	
+	//setconstThreeLW.splice(0, 3);
+	//setconstFourLW.splice(0, 3);
+	//currentBatchIndex = 6;
+	
+	let startIdx = currentBatchIndex * pgnConst;
+	currentThreeLW = setconstThreeLW.slice(startIdx, startIdx + pgnConst);
+	currentFourLW = setconstFourLW.slice(startIdx, startIdx + pgnConst);
+	
+	currentMergeSet = [...currentThreeLW,  ...currentFourLW];
+	shuffle(currentMergeSet);
+	console.log(currentMergeSet)
+	challengeOnlyArr = [...currentMergeSet];
+	threeFourLWBoard();
+}
+
+export function deseydicing(){
+	let startIdx = currentBatchIndex * pgnConst;
+	currentThreeLW = setconstThreeLW.slice(startIdx, startIdx + pgnConst);
+	currentFourLW = setconstFourLW.slice(startIdx, startIdx + pgnConst);
+	
+	currentMergeSet = [...currentThreeLW,  ...currentFourLW];
+	shuffle(currentMergeSet);
+	shuffle(currentMergeSet);
+	console.log(currentMergeSet)
+	challengeOnlyArr = [...currentMergeSet];
+	startLessong();
+}
+
+export function increaseCurrentBatchIndex(){
+	currentBatchIndex++;
+	if (currentBatchIndex * pgnConst >= constantArrayNumber) {
+		endLessonClose()
+		//PICTURE LESSON ENDED
+		return;
+	}
+	deseydicing();
+}
+
+function alphetArrConstruct(){
+	alphabet = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i));
+}
+
 
 export function shuffle(array) {
   let currentIndex = array.length, randomIndex;
@@ -97,6 +125,7 @@ function relayJSONfile(path, callback) {
     httpRequest.open('GET', path);
     httpRequest.send(); 
 }
+
 
 
 
@@ -180,5 +209,4 @@ function testrunda(){
 	
 
 	lunch2();
-
 }*/
