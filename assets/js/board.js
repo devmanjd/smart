@@ -150,7 +150,7 @@ export async function preloadAllAudios() {
         
         // Show content and hide loader
 		threeFourLWBoard();
-        //document.getElementById('content').style.display = 'block';
+        document.getElementById('lessonContent').style.display = '';
         document.body.classList.add('loaded');
         
         // Remove loader from DOM after animation
@@ -165,7 +165,7 @@ export async function preloadAllAudios() {
         console.error('Error during audio preloading:', error);
         // Still show content even if some audios failed
 		threeFourLWBoard();
-        //document.getElementById('content').style.display = 'block';
+        document.getElementById('lessonContent').style.display = '';
         document.body.classList.add('loaded');
     }
 }
